@@ -1,0 +1,155 @@
+const puppeteer = require('puppeteer');
+const db = require('./db'); // Shared MySQL connection
+
+
+async function runScraper(chatName, targetDate) {
+    const browser = await puppeteer.launch({ headless: false });
+    const page = await browser.newPage();
+
+    // Load WhatsApp Web
+    await page.goto('https://web.whatsapp.com');
+    console.log("📱 Scan the QR code to log in.");
+
+    // Wait for chat and click
+    await page.waitForSelector(`span[title="${chatName}"]`);
+    await page.click(`span[title="${chatName}"]`);
+    await page.waitForSelector('div[class*="message-in"], div[class*="message-out"]');
+
+    // // Scroll up for 5 seconds
+    // const startTime = Date.now();
+    // while ((Date.now() - startTime) < 5000) {
+    //     await page.keyboard.press('PageUp');
+    //     await new Promise(resolve => setTimeout(resolve, 1000));
+    // }
+
+
+    // Convert targetDate to MM/DD/YYYY format
+    const [year, month, day] = targetDate.split('-');
+    const formattedTargetDate = `${Number(month)}/${Number(day)}/${year}`;
+
+    // Helper function to check if we reached the beginning of the chat
+    async function reachedEndOfChat(page) {
+        try {
+            return await page.evaluate(() => {
+                // Use a more flexible selector with 'contains'
+                return Array.from(document.querySelectorAll('span[class*="_ao3e"]')).some(el =>
+                    el.innerText.includes("Messages are end-to-end encrypted")
+                );
+            });
+        } catch (error) {
+            console.error("❌ Error checking for end of chat:", error);
+            return false; // Fallback to prevent crashes
+        }
+    }
+
+
+    // Scroll until target date is found or end of chat
+    let foundDate = false;
+    let reachedEnd = false;
+
+    while (!foundDate && !reachedEnd) {
+        await page.keyboard.press('PageUp');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Check if the target date is found
+        foundDate = await page.evaluate((formattedTargetDate) => {
+            return Array.from(document.querySelectorAll('div.copyable-text'))
+                .some(metaDiv => metaDiv.getAttribute('data-pre-plain-text')?.includes(formattedTargetDate));
+        }, formattedTargetDate);
+
+        // Check if we've reached the beginning of the chat
+        reachedEnd = await reachedEndOfChat(page);
+    }
+
+    if (reachedEnd) {
+        console.log("📌 Reached the beginning of the chat. Stopping scroll.");
+    } else {
+        console.log("✅ Target date found. Extracting messages...");
+    }
+
+    // Extract messages
+    const messages = await page.evaluate(() => {
+        // Helper to decode message and handle line breaks
+        const extractMessageText = (msg) => {
+            const spans = msg.querySelectorAll('span._ao3e span'); // Select all message parts
+
+            // Collect all spans and join with newlines
+            return Array.from(spans)
+                .map(span => span.innerText) // Extract text
+                .join(';') // Use semicolon as the separator
+        };
+
+        return Array.from(document.querySelectorAll('div[class*="message-in"], div[class*="message-out"]'))
+            .map(msg => {
+                const metaDiv = msg.querySelector('div.copyable-text');
+                const metaText = metaDiv ? metaDiv.getAttribute('data-pre-plain-text') : "";
+
+                const messageText = extractMessageText(msg); // Get full message
+
+                return { meta: metaText, text: messageText };
+            })
+            .filter(msg => msg.meta && msg.text); // Filter valid messages
+    });
+
+    // Regex to extract datetime and name
+    const metaRegex = /\[(\d{2}:\d{2}), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
+
+    // Regex for order extraction (date, area, name, and order details)
+    const orderRegex = /Date:\s*(\d{1,2}-\d{1,2}-\d{4})\s*;?Location:\s*(\w+)\s*;?Name:\s*(.*?)\s*;?Order:\s*([\s\S]*)/;
+
+
+    // Save messages to MySQL (orders table)
+    for (const { meta, text } of messages) {
+
+        //META (DATE TIME) LOGIC EXTRACTION MESSAGE
+        const metaMatch = meta.match(metaRegex);
+        let datetime = '';
+        let name = '';
+
+        if (metaMatch) {
+            const time = metaMatch[1];   // "20:25"
+            const month = metaMatch[2];  // "2"
+            const day = metaMatch[3];    // "21"
+            const year = metaMatch[4];   // "2025"
+            name = metaMatch[5];         // "Nick Yeoh"
+
+            datetime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}:00`;
+
+
+
+            //ORDER LOGIC EXTRACTION MESSAGE
+            // Apply regex to extract order details
+            const orderMatch = text.match(orderRegex);
+            if (orderMatch) {
+                let orderDate = orderMatch[1];    // e.g. "23-2-2025"
+                const area = orderMatch[2];         // e.g. "G"
+                const name = orderMatch[3];         // e.g. "Fong Khee hotpot order"
+                const orderDetails = orderMatch[4]; // e.g. "Pork belly- 1 block; Lamb belly- 1 block"
+
+                // Convert orderDate to YYYY-MM-DD format (directly here)
+                const [day, month, year] = orderDate.split('-');
+                orderDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+                // Check if this datetime and other details already exist in the database
+                const isDuplicate = await db.checkIfOrderExists(datetime, orderDate, area, name, orderDetails);
+
+                if (isDuplicate) {
+                    console.log("⚠️ Duplicate order found. Skipping...");
+                    continue; // Skip if duplicate
+                } else {
+                    // Save to the database
+                    await db.insertOrder(datetime, orderDate, area, name, orderDetails);
+                    console.log(`✅ Order saved: ${meta} \n ${text}`);
+                }
+
+
+            }
+        }
+    }
+
+    console.log(messages);
+
+    await browser.close();
+}
+
+module.exports = runScraper;

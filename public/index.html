@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>WhatsApp Scraper</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="order.js"></script>
+    <script src="scrapeBtn.js"></script>
+</head>
+
+<h1>WhatsApp Scraper</h1>
+<div class="controls">
+    <label for="chatName">Chat Name:</label>
+    <input type="text" id="chatName" placeholder="Enter Chat Name" required>
+
+    <label for="targetDate">Target Date:</label>
+    <input type="date" id="targetDate" required>
+
+    <button id="scrapeBtn">Retrieve WhatsApp Messages</button>
+</div>
+
+
+<body>
+
+
+    <div class="container">
+        <h1>Order Report</h1>
+
+        <div class="controls">
+            <label for="dateFilter">Filter by Date:</label>
+            <input type="date" id="dateFilter"> <!-- Updated to input[type="date"] -->
+
+            <label for="locationFilter">Filter by Location:</label>
+            <select id="locationFilter">
+                <option value="">All Locations</option>
+                <option value="FT">FT</option>
+                <option value="G">G</option>
+                <option value="BL">BL</option>
+                <option value="PT">PT</option>
+                <option value="BW">BW</option>
+            </select>
+
+            <button id="filterBtn">Apply Filter</button>
+            <button id="showAllBtn">Show All</button>
+        </div>
+
+        <div id="orderList"></div>
+    </div>
+
+
+</body>
+
+</html>

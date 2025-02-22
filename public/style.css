@@ -1,0 +1,164 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Container for content */
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-top: 50px;
+}
+
+/* Header styles */
+h1 {
+    text-align: center;
+    color: #333;
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+/* Controls section styling */
+.controls {
+    max-width: 600px;
+    margin-bottom: 20px;
+    margin: auto;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 8px 0;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+button {
+    background: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+/* Order list styles */
+#orderList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.orderListUl {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-group {
+    margin-bottom: 30px; /* Add spacing between each date group */
+}
+
+.order-date {
+    font-size: 18px;
+    color: #007BFF;
+    margin: 15px 0;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.order-item {
+    background: #fff;
+    margin: 15px 0;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s;
+    border-left: 5px solid #007BFF;
+}
+
+.order-item:hover {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-10px);
+    transition: all 1s ease;
+    background-color: #d7d7d7;
+}
+
+.order-item h3 {
+    color: #007BFF;
+    margin: 0 0 10px;
+    font-size: 20px;
+}
+
+.order-item p {
+    color: #555;
+    padding: 5px 0;
+    font-size: 14px;
+}
+
+.order-item strong {
+    color: #333;
+}
+
+/* Date input styling */
+input[type="date"] {
+    width: 100%;
+    padding: 8px 0;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #333;
+    outline: none;
+    transition: border 0.3s;
+}
+
+input[type="date"]:hover {
+    border-color: #007BFF;
+}
+
+input[type="date"]:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(40%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    input, select, button {
+        font-size: 12px;
+        padding: 6px;
+    }
+}
