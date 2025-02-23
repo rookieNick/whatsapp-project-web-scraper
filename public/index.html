@@ -6,10 +6,11 @@
     <link rel="stylesheet" href="style.css">
     <script src="order.js"></script>
     <script src="scrapeBtn.js"></script>
+    <script src="exportBtn.js"></script>
 </head>
 
-<h1>WhatsApp Scraper</h1>
 <div class="controls">
+    <h1>WhatsApp Scraper</h1>
     <label for="chatName">Chat Name:</label>
     <input type="text" id="chatName" placeholder="Enter Chat Name" required>
 
@@ -17,6 +18,32 @@
     <input type="date" id="targetDate" required>
 
     <button id="scrapeBtn">Retrieve WhatsApp Messages</button>
+</div>
+
+<div class="controls">
+    <h1>Export excel</h1>
+    <!-- Start Date & Time -->
+    <label for="startDateTime">Customer Message Start Date & Time:</label>
+    <input type="datetime-local" id="startDateTime" required>
+
+    <!-- End Date & Time -->
+    <label for="endDateTime">Customer Message End Date & Time:</label>
+    <input type="datetime-local" id="endDateTime" required>
+
+    <label for="orderDate">Order Date:</label>
+    <input type="date" id="orderDate" required>
+
+    <label for="orderArea">Area:</label>
+    <select id="orderArea">
+        <option value="">All Area</option>
+        <option value="FT">FT</option>
+        <option value="G">G</option>
+        <option value="BL">BL</option>
+        <option value="PT">PT</option>
+        <option value="BW">BW</option>
+    </select>
+
+    <button id="exportBtn">Export Excel</button>
 </div>
 
 
@@ -27,12 +54,21 @@
         <h1>Order Report</h1>
 
         <div class="controls">
-            <label for="dateFilter">Filter by Date:</label>
-            <input type="date" id="dateFilter"> <!-- Updated to input[type="date"] -->
+            <!-- Filter by Customer Message Start Date -->
+            <label for="startDateFilter">Customer Message Start Date:</label>
+            <input type="datetime-local" id="startDateFilter">
 
-            <label for="locationFilter">Filter by Location:</label>
+            <!-- Filter by Customer Message End Date -->
+            <label for="endDateFilter">Customer Message End Date:</label>
+            <input type="datetime-local" id="endDateFilter">
+
+            <!-- Filter by Order Date -->
+            <label for="orderDateFilter">Filter by Order Date:</label>
+            <input type="date" id="orderDateFilter"> <!-- Renamed to reflect that it's for Order Date -->
+
+            <label for="locationFilter">Filter by Area:</label>
             <select id="locationFilter">
-                <option value="">All Locations</option>
+                <option value="">All Area</option>
                 <option value="FT">FT</option>
                 <option value="G">G</option>
                 <option value="BL">BL</option>

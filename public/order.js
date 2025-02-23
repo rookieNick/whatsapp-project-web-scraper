@@ -6,8 +6,11 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('showAllBtn').addEventListener('click', () => fetchOrders());
 });
 
-function fetchOrders(date = '', location = '') {
-    const url = `/orders?date=${date}&location=${location}`;
+function fetchOrders(startDate = '', endDate = '', orderDate = '', location = '') {
+    // Pass the filters (startDate, endDate, orderDate, location) as query parameters to the backend
+    const url = `/orders?startDate=${startDate}&endDate=${endDate}&orderDate=${orderDate}&location=${location}`;
+
+    console.log("fetch orders: " + orderDate);
 
     fetch(url)
         .then(response => response.json())
@@ -19,13 +22,19 @@ function fetchOrders(date = '', location = '') {
         .catch(error => console.error('Error fetching orders:', error));
 }
 
+
 function fetchFilteredOrders() {
-    const selectedDate = document.getElementById("dateFilter").value;
+    const selectedStartDate = document.getElementById("startDateFilter").value;
+    const selectedEndDate = document.getElementById("endDateFilter").value;
+    const selectedOrderDate = document.getElementById("orderDateFilter").value;  // For Order Date filter
     const selectedLocation = document.getElementById("locationFilter").value;
+    
+    console.log("fetch filtered orders: " + selectedOrderDate);
 
     // Pass the selected filters to the fetchOrders function
-    fetchOrders(selectedDate, selectedLocation);
+    fetchOrders(selectedStartDate, selectedEndDate, selectedOrderDate, selectedLocation);
 }
+
 
 // Function to combine duplicate orders by the same customer
 function combineDuplicateOrders(orders) {
