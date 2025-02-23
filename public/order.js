@@ -77,14 +77,14 @@ function combineDuplicateOrders(orders) {
     return Object.values(combined).map(order => ({
         ...order,
         id: order.ids.join(" + "),
-        msgDatetime: order.msgDatetimes.join(" ; "),
+        msgDatetime: order.msgDatetimes.join(" <br> "),
         orderDetails: Object.entries(order.orderDetails)
             .map(([nameUnit, { sum, details }]) => {
                 const [name, unit] = nameUnit.split("-");
                 const breakdown = details.length > 1 ? `(${details.join(" + ")})` : "";
                 return `${name.trim()} - ${sum}${unit ? unit.trim() : ''} ${breakdown}`.trim();
             })
-            .join(" ; ")
+            .join(" <br> ")
     }));
 }
 

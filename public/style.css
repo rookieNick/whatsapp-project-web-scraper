@@ -28,8 +28,12 @@ h1 {
 /* Controls section styling */
 .controls {
     max-width: 600px;
-    margin-bottom: 20px;
-    margin: auto;
+    margin: 20px auto;
+
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    background-color: white;
 }
 
 label {
@@ -146,6 +150,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     filter: invert(40%);
 }
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
