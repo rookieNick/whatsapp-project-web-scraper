@@ -142,37 +142,52 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
 
         // Create Excel workbook and worksheet
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Orders');
-
-        // Add date on top
-        worksheet.mergeCells('A1:E1');
-        worksheet.getCell('A1').value = `Order Date: ${orderDate}`;
-        worksheet.getCell('A1').font = { bold: true, size: 14 };
+        // const worksheet = workbook.addWorksheet('Orders');
 
 
-        const formattedStartDateTime = startDateTime.replace('T', ' ');  // Replace 'T' with a space
-        const formattedEndDateTime = endDateTime.replace('T', ' ');  // Replace 'T' with a space
-
-        worksheet.mergeCells('A2:E2');
-        worksheet.getCell('A2').value = `Message Start Date Time: ${formattedStartDateTime}`;
-        worksheet.getCell('A2').font = { bold: true, size: 14 };
-
-        worksheet.mergeCells('A3:E3');
-        worksheet.getCell('A3').value = `Message End Date Time: ${formattedEndDateTime}`;
-        worksheet.getCell('A3').font = { bold: true, size: 14 };
 
 
 
         // Iterate over each area group and add to the worksheet
         Object.entries(groupedByArea).forEach(([area, orders]) => {
-            // Add area header
-            const startRow = worksheet.rowCount + 2;
-            worksheet.getCell(`A${startRow}`).value = `Area: ${area}`;
-            worksheet.getCell(`A${startRow}`).font = { bold: true, size: 12 };
+            const worksheet = workbook.addWorksheet(area);
 
-            console.log("AREA: " + area);
+            worksheet.mergeCells('A1:E1');
+            worksheet.getCell('A1').value = `Order Date: ${orderDate}`;
+            worksheet.getCell('A1').font = { bold: true, size: 14 };
 
-            // Add headers (excluding msgDatetime, orderDate, area)
+            worksheet.mergeCells('A2:E2');
+            worksheet.getCell('A2').value = `Message Start Date Time: ${formatDate(startDateTime)}`;
+            worksheet.getCell('A2').font = { bold: true, size: 14 };
+
+            worksheet.mergeCells('A3:E3');
+            worksheet.getCell('A3').value = `Message End Date Time: ${formatDate(endDateTime)}`;
+            worksheet.getCell('A3').font = { bold: true, size: 14 };
+
+            // const startRow = worksheet.rowCount + 2;
+
+            // // Add Order Date
+            // worksheet.mergeCells(`A${startRow}:E${startRow}`);
+            // worksheet.getCell(`A${startRow}`).value = `Order Date: ${orderDate}`;
+            // worksheet.getCell(`A${startRow}`).font = { bold: true, size: 14 };
+
+            // // Add Message Start Date Time
+            // const formattedStartDateTime = startDateTime.replace('T', ' ');
+            // worksheet.mergeCells(`A${startRow + 1}:E${startRow + 1}`);
+            // worksheet.getCell(`A${startRow + 1}`).value = `Message Start Date Time: ${formattedStartDateTime}`;
+            // worksheet.getCell(`A${startRow + 1}`).font = { bold: true, size: 14 };
+
+            // // Add Message End Date Time
+            // const formattedEndDateTime = endDateTime.replace('T', ' ');
+            // worksheet.mergeCells(`A${startRow + 2}:E${startRow + 2}`);
+            // worksheet.getCell(`A${startRow + 2}`).value = `Message End Date Time: ${formattedEndDateTime}`;
+            // worksheet.getCell(`A${startRow + 2}`).font = { bold: true, size: 14 };
+
+            // // Add Area Header
+            // const areaRow = worksheet.rowCount + 2;
+            // worksheet.getCell(`A${areaRow}`).value = `Area: ${area}`;
+            // worksheet.getCell(`A${areaRow}`).font = { bold: true, size: 12 };
+
             const headers = Object.keys(orders[0]).filter(key => !['msgDatetime', 'orderDate', 'area'].includes(key));
             worksheet.addRow(headers);
 
@@ -225,6 +240,27 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
             //     const filteredRow = headers.map(key => row[key]);
             //     worksheet.addRow(filteredRow);
             // });
+
+
+            // ✅ Move auto-fit columns here (inside the loop)
+            worksheet.columns.forEach(column => {
+                column.width = 10;
+                column.alignment = { wrapText: true };
+            });
+
+            worksheet.getColumn(1).width = 12;
+            worksheet.getColumn(2).width = 15;
+            worksheet.getColumn(3).width = 45;
+
+            const columns = [1, 2, 3];
+            columns.forEach((col) => {
+                worksheet.getColumn(col).alignment = {
+                    horizontal: 'left', // Align text to the left
+                    vertical: 'top',    // Align text to the top
+                    wrapText: true      // Enable word wrap
+                };
+            });
+
         });
 
 
@@ -251,25 +287,25 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
         
         */
 
-        // Auto-fit columns for better readability
-        worksheet.columns.forEach(column => {
-            column.width = 10;
-            column.alignment = { wrapText: true };
-        });
+        // // Auto-fit columns for better readability
+        // worksheet.columns.forEach(column => {
+        //     column.width = 10;
+        //     column.alignment = { wrapText: true };
+        // });
 
-        worksheet.getColumn(1).width = 12; // Wraps column C
-        worksheet.getColumn(2).width = 15; // Wraps column C
-        worksheet.getColumn(3).width = 45; // Wraps column C
+        // worksheet.getColumn(1).width = 12; // Wraps column C
+        // worksheet.getColumn(2).width = 15; // Wraps column C
+        // worksheet.getColumn(3).width = 45; // Wraps column C
 
-        // Apply left-top alignment and word wrap
-        const columns = [1, 2, 3];
-        columns.forEach((col) => {
-            worksheet.getColumn(col).alignment = {
-                horizontal: 'left', // Align left
-                vertical: 'top',    // Align top
-                wrapText: true      // Enable word wrap
-            };
-        });
+        // // Apply left-top alignment and word wrap
+        // const columns = [1, 2, 3];
+        // columns.forEach((col) => {
+        //     worksheet.getColumn(col).alignment = {
+        //         horizontal: 'left', // Align left
+        //         vertical: 'top',    // Align top
+        //         wrapText: true      // Enable word wrap
+        //     };
+        // });
 
 
 
