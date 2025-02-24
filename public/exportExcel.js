@@ -152,15 +152,15 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
         Object.entries(groupedByArea).forEach(([area, orders]) => {
             const worksheet = workbook.addWorksheet(area);
 
-            worksheet.mergeCells('A1:E1');
+            worksheet.mergeCells('A1:C1');
             worksheet.getCell('A1').value = `Order Date: ${orderDate}`;
             worksheet.getCell('A1').font = { bold: true, size: 14 };
 
-            worksheet.mergeCells('A2:E2');
+            worksheet.mergeCells('A2:C2');
             worksheet.getCell('A2').value = `Message Start Date Time: ${formatDate(startDateTime)}`;
             worksheet.getCell('A2').font = { bold: true, size: 14 };
 
-            worksheet.mergeCells('A3:E3');
+            worksheet.mergeCells('A3:C3');
             worksheet.getCell('A3').value = `Message End Date Time: ${formatDate(endDateTime)}`;
             worksheet.getCell('A3').font = { bold: true, size: 14 };
 
