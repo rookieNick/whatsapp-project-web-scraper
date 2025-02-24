@@ -64,7 +64,7 @@ function combineDuplicateOrders(orders) {
         const currentDetails = combined[key].orderDetails;
 
         order.orderDetails.split(/[;,]/).forEach(item => {
-            const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([a-zA-Z]*)/);
+            const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([\p{L}\p{N}]*)/u);
             if (match) {
                 const [_, itemName, qty, __, unit] = match;
                 const quantity = parseFloat(qty);
@@ -163,6 +163,10 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
             worksheet.mergeCells('A3:C3');
             worksheet.getCell('A3').value = `Message End Date Time: ${formatDate(endDateTime)}`;
             worksheet.getCell('A3').font = { bold: true, size: 14 };
+
+            worksheet.mergeCells('A4:C4');
+            worksheet.getCell('A4').value = `Area: ${area}`;
+            worksheet.getCell('A4').font = { bold: true, size: 14 };
 
             // const startRow = worksheet.rowCount + 2;
 

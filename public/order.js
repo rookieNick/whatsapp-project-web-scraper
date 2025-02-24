@@ -56,7 +56,7 @@ function combineDuplicateOrders(orders) {
         const currentDetails = combined[key].orderDetails;
 
         order.orderDetails.split(/[;,]/).forEach(item => {
-            const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([a-zA-Z]*)/);
+            const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([\p{L}\p{N}]*)/u);
             if (match) {
                 const [_, itemName, qty, __, unit] = match;
                 const quantity = parseFloat(qty);

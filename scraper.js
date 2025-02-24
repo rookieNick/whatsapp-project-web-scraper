@@ -1,6 +1,13 @@
 const puppeteer = require('puppeteer');
 const db = require('./db'); // Shared MySQL connection
 
+// Function to convert 12-hour time to 24-hour format
+function to24Hour(hour, minute, period) {
+    if (period === 'PM' && hour !== '12') hour = String(Number(hour) + 12);
+    if (period === 'AM' && hour === '12') hour = '00';
+    return `${hour.padStart(2, '0')}:${minute}`;
+}
+
 
 async function runScraper(chatName, targetDate) {
     const browser = await puppeteer.launch({ headless: false });
@@ -92,7 +99,9 @@ async function runScraper(chatName, targetDate) {
     });
 
     // Regex to extract datetime and name
-    const metaRegex = /\[(\d{2}:\d{2}), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
+    // Regex for 24-hour and 12-hour formats
+    const metaRegex24 = /\[(\d{2}:\d{2}), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
+    const metaRegex12 = /\[(\d{1,2}):(\d{2}) (AM|PM), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
 
     // Regex for order extraction (date, area, name, and order details)
     const orderRegex = /Date:\s*(\d{1,2}-\d{1,2}-\d{4})\s*;?Location:\s*(\w+)\s*;?Name:\s*(.*?)\s*;?Order:\s*([\s\S]*)/;
@@ -101,50 +110,69 @@ async function runScraper(chatName, targetDate) {
     // Save messages to MySQL (orders table)
     for (const { meta, text } of messages) {
 
+
+
+
         //META (DATE TIME) LOGIC EXTRACTION MESSAGE
-        const metaMatch = meta.match(metaRegex);
         let datetime = '';
         let name = '';
 
-        if (metaMatch) {
-            const time = metaMatch[1];   // "20:25"
-            const month = metaMatch[2];  // "2"
-            const day = metaMatch[3];    // "21"
-            const year = metaMatch[4];   // "2025"
-            name = metaMatch[5];         // "Nick Yeoh"
+        // Try matching both regex patterns
+        const metaMatch24 = meta.match(metaRegex24);
+        const metaMatch12 = meta.match(metaRegex12);
+
+        if (metaMatch24) {
+            const time = metaMatch24[1];   // "20:25"
+            const month = metaMatch24[2];  // "2"
+            const day = metaMatch24[3];    // "24"
+            const year = metaMatch24[4];   // "2025"
+            name = metaMatch24[5];         // "A - Li Xiang"
 
             datetime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}:00`;
 
+        } else if (metaMatch12) {
+            const hour = metaMatch12[1];   // "9"
+            const minute = metaMatch12[2]; // "54"
+            const period = metaMatch12[3]; // "PM"
+            const month = metaMatch12[4];  // "2"
+            const day = metaMatch12[5];    // "24"
+            const year = metaMatch12[6];   // "2025"
+            name = metaMatch12[7];         // "A - Li Xiang"
 
-
-            //ORDER LOGIC EXTRACTION MESSAGE
-            // Apply regex to extract order details
-            const orderMatch = text.match(orderRegex);
-            if (orderMatch) {
-                let orderDate = orderMatch[1];    // e.g. "23-2-2025"
-                const area = orderMatch[2];         // e.g. "G"
-                const name = orderMatch[3];         // e.g. "Fong Khee hotpot order"
-                const orderDetails = orderMatch[4]; // e.g. "Pork belly- 1 block; Lamb belly- 1 block"
-
-                // Convert orderDate to YYYY-MM-DD format (directly here)
-                const [day, month, year] = orderDate.split('-');
-                orderDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-                // Check if this datetime and other details already exist in the database
-                const isDuplicate = await db.checkIfOrderExists(datetime, orderDate, area, name, orderDetails);
-
-                if (isDuplicate) {
-                    console.log("⚠️ Duplicate order found. Skipping...");
-                    continue; // Skip if duplicate
-                } else {
-                    // Save to the database
-                    await db.insertOrder(datetime, orderDate, area, name, orderDetails);
-                    console.log(`✅ Order saved: ${meta} \n ${text}`);
-                }
-
-
-            }
+            const time24 = to24Hour(hour, minute, period);
+            datetime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time24}:00`;
         }
+
+
+
+        //ORDER LOGIC EXTRACTION MESSAGE
+        // Apply regex to extract order details
+        const orderMatch = text.match(orderRegex);
+        if (orderMatch) {
+            let orderDate = orderMatch[1];    // e.g. "23-2-2025"
+            const area = orderMatch[2];         // e.g. "G"
+            const name = orderMatch[3];         // e.g. "Fong Khee hotpot order"
+            const orderDetails = orderMatch[4]; // e.g. "Pork belly- 1 block; Lamb belly- 1 block"
+
+            // Convert orderDate to YYYY-MM-DD format (directly here)
+            const [day, month, year] = orderDate.split('-');
+            orderDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+            // Check if this datetime and other details already exist in the database
+            const isDuplicate = await db.checkIfOrderExists(datetime, orderDate, area, name, orderDetails);
+
+            if (isDuplicate) {
+                console.log("⚠️ Duplicate order found. Skipping...");
+                continue; // Skip if duplicate
+            } else {
+                // Save to the database
+                await db.insertOrder(datetime, orderDate, area, name, orderDetails);
+                console.log(`✅ Order saved: ${meta} \n ${text}`);
+            }
+
+
+        }
+
     }
 
     console.log(messages);
