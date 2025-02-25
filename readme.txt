@@ -1,6 +1,6 @@
 1. follow the template
-the date must be in dd-mm-yyyy or d-m-yyyy
-the order item can be separated by , or new line. the order qty must be separated by dash (-) from the item name
+the date must be in dd-mm-yyyy or dd/mm/yyyy or dd.mm.yyyy (d and month and be one digit)
+the order item can be separated by ',' or new line. the order qty must be separated by dash (-) from the item name
 
 Date:
 Location: 
