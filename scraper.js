@@ -48,6 +48,24 @@ async function scrollUntilChatFound(page, chatName) {
     }
 }
 
+// Helper function to check if we reached the beginning of the chat
+async function reachedEndOfChat(page) {
+    try {
+        return await page.evaluate(() => {
+            // Use a more flexible selector with 'contains'
+            return Array.from(document.querySelectorAll('span[class*="_ao3e"]')).some(el =>
+                el.innerText.includes("Messages are end-to-end encrypted")
+            );
+        });
+    } catch (error) {
+        console.error("❌ Error checking for end of chat:", error);
+        return false; // Fallback to prevent crashes
+    }
+}
+
+
+
+
 
 
 async function runScraper(chatName, targetDate) {
@@ -88,20 +106,6 @@ async function runScraper(chatName, targetDate) {
     const [year, month, day] = targetDate.split('-');
     const formattedTargetDate = `${Number(month)}/${Number(day)}/${year}`;
 
-    // Helper function to check if we reached the beginning of the chat
-    async function reachedEndOfChat(page) {
-        try {
-            return await page.evaluate(() => {
-                // Use a more flexible selector with 'contains'
-                return Array.from(document.querySelectorAll('span[class*="_ao3e"]')).some(el =>
-                    el.innerText.includes("Messages are end-to-end encrypted")
-                );
-            });
-        } catch (error) {
-            console.error("❌ Error checking for end of chat:", error);
-            return false; // Fallback to prevent crashes
-        }
-    }
 
 
     // Scroll until target date is found or end of chat
@@ -158,7 +162,19 @@ async function runScraper(chatName, targetDate) {
     const metaRegex12 = /\[(\d{1,2}):(\d{2}) (AM|PM), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
 
     // Regex for order extraction (date, area, name, and order details)
-    const orderRegex = /Date:\s*(\d{1,2}-\d{1,2}-\d{4})\s*;?Location:\s*(\w+)\s*;?Name:\s*(.*?)\s*;?Order:\s*([\s\S]*)/;
+    const orderRegex = /Date:\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})\s*;?Location:\s*(\w+)\s*;?Name:\s*(.*?)\s*;?Order:\s*([\s\S]*)/;
+
+    // Updated date normalization logic
+    const normalizeDate = (dateString) => {
+        // Match and extract day, month, and year using a flexible pattern
+        const dateParts = dateString.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+        if (!dateParts) return null; // Return null if no match
+
+        const [_, day, month, year] = dateParts;
+
+        // Ensure values are properly formatted as YYYY-MM-DD
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    };
 
 
     // Save messages to MySQL (orders table)
@@ -203,14 +219,11 @@ async function runScraper(chatName, targetDate) {
         // Apply regex to extract order details
         const orderMatch = text.match(orderRegex);
         if (orderMatch) {
-            let orderDate = orderMatch[1];    // e.g. "23-2-2025"
+            let orderDate = normalizeDate(orderMatch[1]); // Normalize to YYYY-MM-DD    // e.g. "23-2-2025"
             const area = orderMatch[2];         // e.g. "G"
             const name = orderMatch[3];         // e.g. "Fong Khee hotpot order"
             const orderDetails = orderMatch[4]; // e.g. "Pork belly- 1 block; Lamb belly- 1 block"
 
-            // Convert orderDate to YYYY-MM-DD format (directly here)
-            const [day, month, year] = orderDate.split('-');
-            orderDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
             // Check if this datetime and other details already exist in the database
             const isDuplicate = await db.checkIfOrderExists(datetime, orderDate, area, name, orderDetails);
