@@ -7,15 +7,69 @@ function to24Hour(hour, minute, period) {
     if (period === 'AM' && hour === '12') hour = '00';
     return `${hour.padStart(2, '0')}:${minute}`;
 }
+// Scroll down using mouse wheel until chat name is found
+async function scrollUntilChatFound(page, chatName) {
+    let chatFound = false;
+    while (!chatFound) {
+        try {
+            // // Move the mouse to (300, 300)
+            await page.mouse.move(300, 300);
+
+
+            // Check if the chat is visible
+            chatFound = await page.evaluate((chatName) => {
+                const chat = document.querySelector(`span[title="${chatName}"]`);
+                if (chat) {
+                    chat.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return true; // Found the chat
+                }
+                return false;
+            }, chatName);
+
+            if (!chatFound) {
+                console.log("📜 Scrolling with mouse...");
+
+                // Simulate mouse scroll down
+                await page.mouse.wheel({ deltaY: 300 });
+
+                // Wait for a short duration to allow DOM updates
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+        } catch (error) {
+            console.error("❌ Error while scrolling for chat:", error);
+            break; // Exit loop if an error occurs
+        }
+    }
+
+    if (chatFound) {
+        console.log("✅ Chat found and scrolled into view.");
+    } else {
+        console.log("⚠️ Chat not found.");
+    }
+}
+
 
 
 async function runScraper(chatName, targetDate) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            '--window-size=1200,800',      // Width: 1200px, Height: 800px
+            '--window-position=0,0'        // Top-left corner (x: 0, y: 0)
+        ]
+    });
     const page = await browser.newPage();
 
     // Load WhatsApp Web
     await page.goto('https://web.whatsapp.com');
     console.log("📱 Scan the QR code to log in.");
+
+    // Wait for the main chat list to load
+    await page.waitForSelector('div[role="grid"]');
+
+    // Scroll until the desired chat is found
+    console.log(`🔍 Searching for chat: ${chatName}`);
+    await scrollUntilChatFound(page, chatName);
 
     // Wait for chat and click
     await page.waitForSelector(`span[title="${chatName}"]`);

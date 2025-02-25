@@ -193,6 +193,7 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
             // worksheet.getCell(`A${areaRow}`).font = { bold: true, size: 12 };
 
             const headers = Object.keys(orders[0]).filter(key => !['msgDatetime', 'orderDate', 'area'].includes(key));
+            headers.push('remarks');
             worksheet.addRow(headers);
 
             const combinedOrders = combineDuplicateOrders(orders);
