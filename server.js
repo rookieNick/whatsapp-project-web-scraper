@@ -37,10 +37,14 @@ app.post('/scrape', async (req, res) => {
 
     try {
         console.log(`📅 Starting scraper for: ${chatName} until ${targetDate}`);
-        
-        await runScraper(chatName, targetDate);
 
-        res.json({ message: '✅ Scraping completed successfully! Please refresh to load the latest orders' });
+        // Run scraper and collect incorrect messages
+        const incorrectMessages = await runScraper(chatName, targetDate);
+
+        res.json({
+            message: '✅ Scraping completed successfully! Please refresh to load the latest orders',
+            incorrectMessages
+        });
     } catch (error) {
         console.error('❌ Error running scraper:', error);
         res.status(500).json({ message: '❌ Error running scraper' });

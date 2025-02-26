@@ -167,3 +167,41 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 6px;
     }
 }
+
+
+/* Incorrect Messages Box */
+#incorrectMessages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 350px;
+    z-index: 9999; /* Ensure it's above other content */
+}
+
+/* Individual Incorrect Message */
+.incorrect-message {
+    background-color: #FF4D4D; /* Red for errors */
+    color: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    word-break: break-word;
+    opacity: 0.95;
+    transition: opacity 0.5s ease;
+}
+
+/* Hover effect for better UX */
+.incorrect-message:hover {
+    opacity: 1;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 768px) {
+    #incorrectMessages {
+        top: 10px;
+        right: 10px;
+        max-width: 90%;
+    }
+}

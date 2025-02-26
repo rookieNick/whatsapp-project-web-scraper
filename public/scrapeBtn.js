@@ -17,8 +17,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             alert(result.message);
+
+            if (result.incorrectMessages && result.incorrectMessages.length > 0) {
+                displayIncorrectMessages(result.incorrectMessages);
+            }
         } catch (error) {
-            alert('❌ Error starting the scraper: ' + error.message);
+            console.error('❌ Error during scraping:', error);
+            alert('❌ Error during scraping.');
         }
     });
+
+    // Function to display incorrect messages
+function displayIncorrectMessages(incorrectMessages) {
+    const incorrectContainer = document.getElementById('incorrectMessages');
+    incorrectContainer.innerHTML = "<h2 class='incorrect-title'>🚨 Incorrect Messages:</h2>";
+
+    incorrectMessages.forEach((msg, index) => {
+        // Create a message element
+        const messageElement = document.createElement('div');
+        messageElement.className = 'incorrect-message';
+        messageElement.id = `incorrect-msg-${index}`;
+        messageElement.innerHTML = `
+            <strong>${msg.datetime}</strong> <br> 
+            <strong>Name:</strong> ${msg.name} <br> 
+            <strong>Error:</strong> ${msg.text}
+        `;
+
+        // Append to the incorrect message container
+        incorrectContainer.appendChild(messageElement);
+    });
+}
+
 });

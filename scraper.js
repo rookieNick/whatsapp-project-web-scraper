@@ -177,6 +177,9 @@ async function runScraper(chatName, targetDate) {
     };
 
 
+    // Store incorrect messages
+    const incorrectMessages = [];
+
     // Save messages to MySQL (orders table)
     for (const { meta, text } of messages) {
 
@@ -238,13 +241,19 @@ async function runScraper(chatName, targetDate) {
             }
 
 
+        } else {
+            console.log("❌ Invalid message format detected:", text);
+            incorrectMessages.push({ datetime, name, text });
         }
 
     }
 
     console.log(messages);
+    console.log("🚨 Incorrect messages:", incorrectMessages);
 
     await browser.close();
+
+    return incorrectMessages;
 }
 
 module.exports = runScraper;
