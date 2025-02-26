@@ -44,7 +44,8 @@ function combineDuplicateOrders(orders) {
         const key = `${order.orderDate}-${order.area}-${order.name}`;
 
         if (!combined[key]) {
-            combined[key] = { ...order, orderDetails: {}, ids: [], msgDatetimes: [] };
+            // combined[key] = { ...order, orderDetails: {}, ids: [], msgDatetimes: [] };
+            combined[key] = { ...order, orderDetails: [], ids: [], msgDatetimes: [] };
         }
 
         // Avoid duplicate IDs and message datetimes
@@ -53,38 +54,59 @@ function combineDuplicateOrders(orders) {
             combined[key].msgDatetimes.push(`${order.id}: ${formatDate(order.msgDatetime)}`);
         }
 
-        const currentDetails = combined[key].orderDetails;
+        // Log the order details before splitting
+        console.log("Original order details:", order.orderDetails);
 
+        // const currentDetails = combined[key].orderDetails;
+
+        // order.orderDetails.split(/[;,]/).forEach(item => {
+        //     const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([\p{L}\p{N}]*)/u);
+        //     if (match) {
+        //         const [_, itemName, qty, __, unit] = match;
+        //         const quantity = parseFloat(qty);
+        //         // Convert item name and unit to lowercase for case-insensitive matching
+        //         const itemKey = `${itemName.trim().toLowerCase()}-${unit.trim().toLowerCase()}`;
+
+        //         if (currentDetails[itemKey]) {
+        //             // Track both the sum and individual quantities
+        //             currentDetails[itemKey].sum += quantity;
+        //             currentDetails[itemKey].details.push(quantity);
+        //         } else {
+        //             currentDetails[itemKey] = { sum: quantity, details: [quantity] };
+        //         }
+        //     }
+        // });
+
+        // Split order details and add each item separately
         order.orderDetails.split(/[;,]/).forEach(item => {
-            const match = item.trim().match(/(.+?)\s*-\s*(\d+(\.\d+)?)\s*([\p{L}\p{N}]*)/u);
-            if (match) {
-                const [_, itemName, qty, __, unit] = match;
-                const quantity = parseFloat(qty);
-                // Convert item name and unit to lowercase for case-insensitive matching
-                const itemKey = `${itemName.trim().toLowerCase()}-${unit.trim().toLowerCase()}`;
-
-                if (currentDetails[itemKey]) {
-                    // Track both the sum and individual quantities
-                    currentDetails[itemKey].sum += quantity;
-                    currentDetails[itemKey].details.push(quantity);
-                } else {
-                    currentDetails[itemKey] = { sum: quantity, details: [quantity] };
-                }
+            const formattedItem = item.trim();
+            if (formattedItem) {
+                combined[key].orderDetails.push(formattedItem);
             }
         });
+
+        // Log the combined object after processing the order
+        console.log("Current combined state:", combined);
     });
+
+    // return Object.values(combined).map(order => ({
+    //     ...order,
+    //     id: order.ids.join(" + "),
+    //     msgDatetime: order.msgDatetimes.join(" <br> "),
+    //     orderDetails: Object.entries(order.orderDetails)
+    //         .map(([nameUnit, { sum, details }]) => {
+    //             const [name, unit] = nameUnit.split("-");
+    //             const breakdown = details.length > 1 ? `(${details.join(" + ")})` : "";
+    //             return `${name.trim()} - ${sum}${unit ? unit.trim() : ''} ${breakdown}`.trim();
+    //         })
+    //         .join(" <br> ")
+    // }));
 
     return Object.values(combined).map(order => ({
         ...order,
         id: order.ids.join(" + "),
         msgDatetime: order.msgDatetimes.join(" <br> "),
-        orderDetails: Object.entries(order.orderDetails)
-            .map(([nameUnit, { sum, details }]) => {
-                const [name, unit] = nameUnit.split("-");
-                const breakdown = details.length > 1 ? `(${details.join(" + ")})` : "";
-                return `${name.trim()} - ${sum}${unit ? unit.trim() : ''} ${breakdown}`.trim();
-            })
-            .join(" <br> ")
+        orderDetails: order.orderDetails.join(" <br> ")
     }));
 }
 
