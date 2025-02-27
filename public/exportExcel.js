@@ -4,6 +4,11 @@ const path = require('path');
 const os = require('os'); // Import os module for home directory
 const db = require('./../db'); // Import our db functions
 
+// Function to format order area to uppercase
+function formatOrderArea(area) {
+    return area.toUpperCase();
+}
+
 
 // Apply borders to a specific range of cells
 function applyBorders(worksheet, startRow, endRow, totalColumns) {
@@ -128,6 +133,10 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
     try {
         // Get filtered orders from the database
         const rows = await db.getOrdersWithFilters(startDateTime, endDateTime, orderDate, orderArea);
+
+        rows.forEach(order => {
+            order.area = formatOrderArea(order.area);
+        });
 
         if (rows.length === 0) {
             return res.status(404).json({ message: '⚠️ No matching orders found!' });
