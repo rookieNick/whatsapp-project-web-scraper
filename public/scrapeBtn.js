@@ -28,24 +28,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Function to display incorrect messages
-function displayIncorrectMessages(incorrectMessages) {
-    const incorrectContainer = document.getElementById('incorrectMessages');
-    incorrectContainer.innerHTML = "<h2 class='incorrect-title'>🚨 Incorrect Messages:</h2>";
+    function displayIncorrectMessages(incorrectMessages) {
+        const incorrectContainer = document.getElementById('incorrectMessages');
+        incorrectContainer.innerHTML = "<h2 class='incorrect-title'>🚨 Incorrect Messages:</h2>";
 
-    incorrectMessages.forEach((msg, index) => {
-        // Create a message element
-        const messageElement = document.createElement('div');
-        messageElement.className = 'incorrect-message';
-        messageElement.id = `incorrect-msg-${index}`;
-        messageElement.innerHTML = `
+        incorrectMessages.forEach((msg, index) => {
+            // Create a message element
+            const messageElement = document.createElement('div');
+            messageElement.className = 'incorrect-message';
+            messageElement.id = `incorrect-msg-${index}`;
+
+            // Populate message content
+            messageElement.innerHTML = `
             <strong>${msg.datetime}</strong> <br> 
             <strong>Name:</strong> ${msg.name} <br> 
             <strong>Error:</strong> ${msg.text}
+            <button class='close-btn' onclick='removeMessage(${index})'>✖</button>
         `;
 
-        // Append to the incorrect message container
-        incorrectContainer.appendChild(messageElement);
-    });
-}
+            // Append to the incorrect message container
+            incorrectContainer.appendChild(messageElement);
+        });
+    }
+
+
 
 });
+
+// Make removeMessage globally accessible
+window.removeMessage = function (index) {
+    const messageToRemove = document.getElementById(`incorrect-msg-${index}`);
+    if (messageToRemove) {
+        messageToRemove.remove();
+    }
+};

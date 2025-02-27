@@ -6,15 +6,25 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('showAllBtn').addEventListener('click', () => fetchOrders());
 });
 
+// Function to format order area to uppercase
+function formatOrderArea(area) {
+    return area.toUpperCase();
+}
+
+
 function fetchOrders(startDate = '', endDate = '', orderDate = '', location = '') {
     // Pass the filters (startDate, endDate, orderDate, location) as query parameters to the backend
     const url = `/orders?startDate=${startDate}&endDate=${endDate}&orderDate=${orderDate}&location=${location}`;
 
-    console.log("fetch orders: " + orderDate);
+    // console.log("fetch orders: " + orderDate);
 
     fetch(url)
         .then(response => response.json())
         .then(data => {
+            // Capitalize order area
+            data.forEach(order => {
+                order.area = formatOrderArea(order.area);
+            });
             const combinedOrders = combineDuplicateOrders(data);
             const groupedData = groupOrders(combinedOrders);
             displayGroupedOrders(groupedData);
@@ -29,7 +39,7 @@ function fetchFilteredOrders() {
     const selectedOrderDate = document.getElementById("orderDateFilter").value;  // For Order Date filter
     const selectedLocation = document.getElementById("locationFilter").value;
     
-    console.log("fetch filtered orders: " + selectedOrderDate);
+    // console.log("fetch filtered orders: " + selectedOrderDate);
 
     // Pass the selected filters to the fetchOrders function
     fetchOrders(selectedStartDate, selectedEndDate, selectedOrderDate, selectedLocation);
@@ -55,7 +65,7 @@ function combineDuplicateOrders(orders) {
         }
 
         // Log the order details before splitting
-        console.log("Original order details:", order.orderDetails);
+        // console.log("Original order details:", order.orderDetails);
 
         // const currentDetails = combined[key].orderDetails;
 
@@ -86,7 +96,7 @@ function combineDuplicateOrders(orders) {
         });
 
         // Log the combined object after processing the order
-        console.log("Current combined state:", combined);
+        // console.log("Current combined state:", combined);
     });
 
     // return Object.values(combined).map(order => ({

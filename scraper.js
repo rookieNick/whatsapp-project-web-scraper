@@ -64,6 +64,43 @@ async function reachedEndOfChat(page) {
 }
 
 
+// Helper function to check if we reached a date before the target date
+async function reachedBeforeTargetDate(page, targetDate) {
+    try {
+        console.log("get target date: " + targetDate);
+
+        return await page.evaluate((targetDate) => {
+            // Parse target date to YYYY-MM-DD for accurate comparison
+            const parseDate = (dateStr) => {
+                const [month, day, year] = dateStr.split('/').map(Number);
+                return new Date(year, month - 1, day);
+            };
+
+            const parsedTargetDate = parseDate(targetDate);
+            console.log("parsed target date: ", parsedTargetDate);
+
+            // Extract all dates from message metadata
+            const metaDivs = Array.from(document.querySelectorAll('div.copyable-text'));
+            return metaDivs.some(metaDiv => {
+                const metaText = metaDiv.getAttribute('data-pre-plain-text');
+                if (!metaText) return false;
+
+                // Extract date using regex (MM/DD/YYYY format)
+                const dateMatch = metaText.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (!dateMatch) return false;
+
+                const messageDate = parseDate(`${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`);
+                console.log("message date: ", messageDate);
+
+                // Use + to compare the time values
+                return +messageDate < +parsedTargetDate;
+            });
+        }, targetDate);
+    } catch (error) {
+        console.error("❌ Error checking for messages before target date:", error);
+        return false; // Fallback to prevent crashes
+    }
+}
 
 
 
@@ -111,8 +148,9 @@ async function runScraper(chatName, targetDate) {
     // Scroll until target date is found or end of chat
     let foundDate = false;
     let reachedEnd = false;
+    let beforeTargetDate = false;
 
-    while (!foundDate && !reachedEnd) {
+    while (!foundDate && !reachedEnd && !beforeTargetDate) {
         await page.keyboard.press('PageUp');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -124,12 +162,20 @@ async function runScraper(chatName, targetDate) {
 
         // Check if we've reached the beginning of the chat
         reachedEnd = await reachedEndOfChat(page);
+
+        beforeTargetDate = await reachedBeforeTargetDate(page, formattedTargetDate);
+
+
     }
 
     if (reachedEnd) {
         console.log("📌 Reached the beginning of the chat. Stopping scroll.");
     } else {
         console.log("✅ Target date found. Extracting messages...");
+    }
+
+    if (beforeTargetDate) {
+        console.log("✅ Reached before target date. Extracting messages...");
     }
 
     // Extract messages
@@ -162,7 +208,7 @@ async function runScraper(chatName, targetDate) {
     const metaRegex12 = /\[(\d{1,2}):(\d{2}) (AM|PM), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
 
     // Regex for order extraction (date, area, name, and order details)
-    const orderRegex = /Date:\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})\s*;?Location:\s*(\w+)\s*;?Name:\s*(.*?)\s*;?Order:\s*([\s\S]*)/;
+    const orderRegex = /Date\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})\s*;?Location\s*(\w+)\s*;?Name\s*(.*?)\s*;?Order\s*([\s\S]*)/;
 
     // Updated date normalization logic
     const normalizeDate = (dateString) => {
@@ -237,19 +283,19 @@ async function runScraper(chatName, targetDate) {
             } else {
                 // Save to the database
                 await db.insertOrder(datetime, orderDate, area, name, orderDetails);
-                console.log(`✅ Order saved: ${meta} \n ${text}`);
+                // console.log(`✅ Order saved: ${meta} \n ${text}`);
             }
 
 
         } else {
-            console.log("❌ Invalid message format detected:", text);
+            // console.log("❌ Invalid message format detected:", text);
             incorrectMessages.push({ datetime, name, text });
         }
 
     }
 
     console.log(messages);
-    console.log("🚨 Incorrect messages:", incorrectMessages);
+    // console.log("🚨 Incorrect messages:", incorrectMessages);
 
     await browser.close();
 
