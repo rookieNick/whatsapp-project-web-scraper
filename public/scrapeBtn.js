@@ -27,10 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Function to display incorrect messages
+    // Function to display incorrect messages in descending order
     function displayIncorrectMessages(incorrectMessages) {
         const incorrectContainer = document.getElementById('incorrectMessages');
         incorrectContainer.innerHTML = "<h2 class='incorrect-title'>🚨 Incorrect Messages:</h2>";
+
+        // Sort messages by datetime in descending order (newest first)
+        incorrectMessages.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
 
         incorrectMessages.forEach((msg, index) => {
             // Create a message element
@@ -44,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Populate message content
             messageElement.innerHTML = `
             <strong>${msg.datetime}</strong> <br> 
-            <strong>Name:</strong> ${msg.name} <br> 
+            <strong>Sender:</strong> ${msg.sender} <br> 
             <strong>Error:</strong> <br> ${errorText}
             <button class='close-btn' onclick='removeMessage(${index})'>✖</button>
         `;
@@ -53,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
             incorrectContainer.appendChild(messageElement);
         });
     }
+
+
 
 
 });

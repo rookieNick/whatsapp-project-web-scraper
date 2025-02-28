@@ -311,7 +311,7 @@ async function runScraper(chatName, targetDate) {
 
         } else {
             // console.log("❌ Invalid message format detected:", text);
-            incorrectMessages.push({ datetime, name, text });
+            incorrectMessages.push({ datetime,sender, text });
         }
 
     }
