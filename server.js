@@ -5,9 +5,13 @@ const db = require('./db'); // Ensure the DB connection is loaded
 const app = express();
 const port = 8000;
 const open = require('open').default;
+const path = require('path');
 
 
-app.use(express.static('public'));
+
+// app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(express.json());
 
 
