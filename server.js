@@ -4,6 +4,8 @@ const exportExcel = require('./public/exportExcel');
 const db = require('./db'); // Ensure the DB connection is loaded
 const app = express();
 const port = 8000;
+const open = require('open').default;
+
 
 app.use(express.static('public'));
 app.use(express.json());
@@ -77,4 +79,5 @@ app.get('/orders', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`🚀 Server running on http://localhost:${port}`);
+    open(`http://localhost:${port}`); // Opens the browser tab
 });
