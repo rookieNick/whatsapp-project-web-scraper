@@ -38,7 +38,7 @@ function fetchFilteredOrders() {
     const selectedEndDate = document.getElementById("endDateFilter").value;
     const selectedOrderDate = document.getElementById("orderDateFilter").value;  // For Order Date filter
     const selectedLocation = document.getElementById("locationFilter").value;
-    
+
     // console.log("fetch filtered orders: " + selectedOrderDate);
 
     // Pass the selected filters to the fetchOrders function
@@ -55,13 +55,14 @@ function combineDuplicateOrders(orders) {
 
         if (!combined[key]) {
             // combined[key] = { ...order, orderDetails: {}, ids: [], msgDatetimes: [] };
-            combined[key] = { ...order, orderDetails: [], ids: [], msgDatetimes: [] };
+            combined[key] = { ...order, orderDetails: [], ids: [], msgDatetimes: [], senders: [] };
         }
 
         // Avoid duplicate IDs and message datetimes
         if (!combined[key].ids.includes(order.id)) {
             combined[key].ids.push(order.id);
             combined[key].msgDatetimes.push(`${order.id}: ${formatDate(order.msgDatetime)}`);
+            combined[key].senders.push(order.sender);
         }
 
         // Log the order details before splitting
@@ -116,7 +117,8 @@ function combineDuplicateOrders(orders) {
         ...order,
         id: order.ids.join(" + "),
         msgDatetime: order.msgDatetimes.join(" <br> "),
-        orderDetails: order.orderDetails.join(" <br> ")
+        orderDetails: order.orderDetails.join(" <br> "),
+        sender: order.senders.join(" + ")
     }));
 }
 
@@ -171,6 +173,7 @@ function displayGroupedOrders(groupedData) {
                     ${orders.map(order => `
                         <li class="order-item">
                             <p><strong>Order ID:</strong> ${order.id}</p>
+                            <p><strong>Sender:</strong> ${order.sender}</p>
                             <p><strong>Message Date & Time:</strong> ${order.msgDatetime}</p>
                             <p><strong>Order Date:</strong> ${formatDate(order.orderDate, true)}</p>
                             <p><strong>Area:</strong> ${order.area}</p>

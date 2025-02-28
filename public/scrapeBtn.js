@@ -38,11 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
             messageElement.className = 'incorrect-message';
             messageElement.id = `incorrect-msg-${index}`;
 
+            // Split the error text on ';' and join with <br> for new lines
+            const errorText = msg.text.split(';').map(part => part.trim()).join('<br>');
+
             // Populate message content
             messageElement.innerHTML = `
             <strong>${msg.datetime}</strong> <br> 
             <strong>Name:</strong> ${msg.name} <br> 
-            <strong>Error:</strong> ${msg.text}
+            <strong>Error:</strong> <br> ${errorText}
             <button class='close-btn' onclick='removeMessage(${index})'>✖</button>
         `;
 
@@ -50,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
             incorrectContainer.appendChild(messageElement);
         });
     }
-
 
 
 });
@@ -62,3 +64,5 @@ window.removeMessage = function (index) {
         messageToRemove.remove();
     }
 };
+
+

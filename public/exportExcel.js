@@ -58,13 +58,14 @@ function combineDuplicateOrders(orders) {
 
         if (!combined[key]) {
             // combined[key] = { ...order, orderDetails: {}, ids: [], msgDatetimes: [] };
-            combined[key] = { ...order, orderDetails: [], ids: [], msgDatetimes: [] };
+            combined[key] = { ...order, orderDetails: [], ids: [], msgDatetimes: [], senders: []  };
         }
 
         // Avoid duplicate IDs and message datetimes
         if (!combined[key].ids.includes(order.id)) {
             combined[key].ids.push(order.id);
             combined[key].msgDatetimes.push(`${order.id}: ${formatDate(order.msgDatetime)}`);
+            combined[key].senders.push(order.sender);
         }
 
         // Log the order details before splitting
@@ -119,7 +120,8 @@ function combineDuplicateOrders(orders) {
         ...order,
         id: order.ids.join(" + "),
         msgDatetime: order.msgDatetimes.join("\n"),
-        orderDetails: order.orderDetails.join("\n")
+        orderDetails: order.orderDetails.join("\n"),
+        sender: order.senders.join(" + ")
     }));
 }
 
@@ -182,19 +184,19 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
         Object.entries(groupedByArea).forEach(([area, orders]) => {
             const worksheet = workbook.addWorksheet(area);
 
-            worksheet.mergeCells('A1:C1');
+            worksheet.mergeCells('A1:D1');
             worksheet.getCell('A1').value = `Order Date: ${orderDate}`;
             worksheet.getCell('A1').font = { bold: true, size: 14 };
 
-            worksheet.mergeCells('A2:C2');
+            worksheet.mergeCells('A2:D2');
             worksheet.getCell('A2').value = `Message Start Date Time: ${formatDate(startDateTime)}`;
             worksheet.getCell('A2').font = { bold: true, size: 14 };
 
-            worksheet.mergeCells('A3:C3');
+            worksheet.mergeCells('A3:D3');
             worksheet.getCell('A3').value = `Message End Date Time: ${formatDate(endDateTime)}`;
             worksheet.getCell('A3').font = { bold: true, size: 14 };
 
-            worksheet.mergeCells('A4:C4');
+            worksheet.mergeCells('A4:D4');
             worksheet.getCell('A4').value = `Area: ${area}`;
             worksheet.getCell('A4').font = { bold: true, size: 14 };
 
@@ -223,7 +225,7 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
             // worksheet.getCell(`A${areaRow}`).font = { bold: true, size: 12 };
 
             // Add "Index" to the header
-            const headers = ['No.', ...Object.keys(orders[0]).filter(key => !['id','msgDatetime', 'orderDate', 'area'].includes(key)), 'remarks'];
+            const headers = ['No.', 'Sender',...Object.keys(orders[0]).filter(key => !['id','sender','msgDatetime', 'orderDate', 'area'].includes(key)), 'remarks'];
             worksheet.addRow(headers);
 
             const combinedOrders = combineDuplicateOrders(orders);
@@ -239,6 +241,7 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
                 // const rowData = headers.map(key => order[key]);
                 const rowData = [
                     index + 1,  // Index column starts at 1
+                    order.sender,
                     order.name,  // OrderDetails column
                     order.orderDetails  // OrderDetails column
                 ];
@@ -288,11 +291,13 @@ async function exportExcel(startDateTime, endDateTime, orderDate, orderArea, res
                 column.alignment = { wrapText: true };
             });
 
-            worksheet.getColumn(1).width = 12;
+            worksheet.getColumn(1).width = 3;
             worksheet.getColumn(2).width = 15;
-            worksheet.getColumn(3).width = 45;
+            worksheet.getColumn(3).width = 15;
+            worksheet.getColumn(4).width = 35;
+            worksheet.getColumn(5).width = 10;
 
-            const columns = [1, 2, 3];
+            const columns = [1, 2, 3,4,5];
             columns.forEach((col) => {
                 worksheet.getColumn(col).alignment = {
                     horizontal: 'left', // Align text to the left

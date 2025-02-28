@@ -33,18 +33,18 @@ db.getLatestOrderIndex = async function () {
 };
 
 // Insert new order with an auto-generated ID
-db.insertOrder = async function (datetime, orderDate, area, name, orderDetails) {
+db.insertOrder = async function (datetime, orderDate, area, name, orderDetails, sender) {
     try {
         const latestIndex = await db.getLatestOrderIndex();
         const newIndex = latestIndex + 1;
         const orderId = `ORDER${newIndex}`;
 
         const sql = `
-            INSERT INTO orders (id, msgDatetime, orderDate, area, name, orderDetails)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO orders (id, msgDatetime, orderDate, area, name, orderDetails, sender)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
-        await dbPromise.query(sql, [orderId, datetime, orderDate, area, name, orderDetails]);
+        await dbPromise.query(sql, [orderId, datetime, orderDate, area, name, orderDetails, sender]);
         console.log(`✅ Order ${orderId} saved successfully.`);
     } catch (error) {
         console.error('❌ Error in insertOrder:', error);

@@ -1,6 +1,20 @@
 const puppeteer = require('puppeteer');
 const db = require('./db'); // Shared MySQL connection
 
+
+// Function to extract sender's name
+function extractSenderName(meta) {
+    const senderRegex = /\] (.*?):/; // Matches text after the last ']' and before ':'
+    const match = meta.match(senderRegex);
+
+    if (match) {
+        return match[1].trim(); // Return the captured sender name
+    }
+
+    return ''; // Fallback if no match
+}
+
+
 // Function to convert 12-hour time to 24-hour format
 function to24Hour(hour, minute, period) {
     if (period === 'PM' && hour !== '12') hour = String(Number(hour) + 12);
@@ -208,19 +222,25 @@ async function runScraper(chatName, targetDate) {
     const metaRegex12 = /\[(\d{1,2}):(\d{2}) (AM|PM), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
 
     // Regex for order extraction (date, area, name, and order details)
-    const orderRegex = /Date\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})\s*;?Location\s*(\w+)\s*;?Name\s*(.*?)\s*;?Order\s*([\s\S]*)/;
+    const orderRegex = /Date\s*(\d{1,2}[-/.]\d{1,2}[-/.](?:\d{2}|\d{4}))\s*;?Location\s*(\w+)\s*;?Name\s*(.*?)\s*;?Order\s*([\s\S]*)/;
 
-    // Updated date normalization logic
+    // Updated date normalization logic (assumes yy is 2000-2099)
     const normalizeDate = (dateString) => {
-        // Match and extract day, month, and year using a flexible pattern
-        const dateParts = dateString.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+        // Match day, month, and flexible year (yy or yyyy)
+        const dateParts = dateString.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
         if (!dateParts) return null; // Return null if no match
 
-        const [_, day, month, year] = dateParts;
+        let [_, day, month, year] = dateParts;
+
+        // Convert 2-digit year (yy) to 4-digit year (20yy)
+        if (year.length === 2) {
+            year = `20${year}`;
+        }
 
         // Ensure values are properly formatted as YYYY-MM-DD
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     };
+
 
 
     // Store incorrect messages
@@ -235,6 +255,7 @@ async function runScraper(chatName, targetDate) {
         //META (DATE TIME) LOGIC EXTRACTION MESSAGE
         let datetime = '';
         let name = '';
+        let sender = '';
 
         // Try matching both regex patterns
         const metaMatch24 = meta.match(metaRegex24);
@@ -246,6 +267,7 @@ async function runScraper(chatName, targetDate) {
             const day = metaMatch24[3];    // "24"
             const year = metaMatch24[4];   // "2025"
             name = metaMatch24[5];         // "A - Li Xiang"
+            sender = extractSenderName(meta);
 
             datetime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}:00`;
 
@@ -257,11 +279,11 @@ async function runScraper(chatName, targetDate) {
             const day = metaMatch12[5];    // "24"
             const year = metaMatch12[6];   // "2025"
             name = metaMatch12[7];         // "A - Li Xiang"
+            sender = extractSenderName(meta);
 
             const time24 = to24Hour(hour, minute, period);
             datetime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time24}:00`;
         }
-
 
 
         //ORDER LOGIC EXTRACTION MESSAGE
@@ -282,7 +304,7 @@ async function runScraper(chatName, targetDate) {
                 continue; // Skip if duplicate
             } else {
                 // Save to the database
-                await db.insertOrder(datetime, orderDate, area, name, orderDetails);
+                await db.insertOrder(datetime, orderDate, area, name, orderDetails, sender);
                 // console.log(`✅ Order saved: ${meta} \n ${text}`);
             }
 
