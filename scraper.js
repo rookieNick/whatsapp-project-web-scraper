@@ -196,7 +196,7 @@ async function runScraper(chatName, targetDate) {
     const messages = await page.evaluate(() => {
         // Helper to decode message and handle line breaks
         const extractMessageText = (msg) => {
-            const spans = msg.querySelectorAll('span._ao3e span'); // Select all message parts
+            const spans = msg.querySelectorAll('span._ao3e span:not(:has(ol)), span[data-pre-plain-text]'); // Select all message parts
 
             // Collect all spans and join with newlines
             return Array.from(spans)
