@@ -222,7 +222,9 @@ async function runScraper(chatName, targetDate) {
     const metaRegex12 = /\[(\d{1,2}):(\d{2}) (AM|PM), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):/;
 
     // Regex for order extraction (date, area, name, and order details)
-    const orderRegex = /Date\s*(\d{1,2}[-/.]\d{1,2}[-/.](?:\d{2}|\d{4}))\s*;?Location\s*(\w+)\s*;?Name\s*(.*?)\s*;?Order\s*([\s\S]*)/;
+    // const orderRegex = /Date\s*(\d{1,2}[-/.]\d{1,2}[-/.](?:\d{2}|\d{4}))\s*;?Location\s*(\w+)\s*;?Name\s*(.*?)\s*;?Order\s*([\s\S]*)/i;
+    const orderRegex = /Date[:\s]*(\d{1,2}[-/.]\d{1,2}[-/.](?:\d{2}|\d{4}))\s*;?\s*Location[:\s]*(\w+)\s*;?\s*Name[:\s]*(.*?)\s*;?\s*Order[:\s]*([\s\S]*)/i;
+
 
     // Updated date normalization logic (assumes yy is 2000-2099)
     const normalizeDate = (dateString) => {
@@ -311,7 +313,7 @@ async function runScraper(chatName, targetDate) {
 
         } else {
             // console.log("❌ Invalid message format detected:", text);
-            incorrectMessages.push({ datetime,sender, text });
+            incorrectMessages.push({ datetime, sender, text });
         }
 
     }
