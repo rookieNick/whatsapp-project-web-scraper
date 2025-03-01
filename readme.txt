@@ -15,3 +15,13 @@ Name The Great Hotpot Order
 Order pork shoulder - 1 block
 shrimp- 600g
 Tofu -400g
+
+
+
+---------------------
+INSTALLATION
+---------------------
+1. npm install - to install all libraries and dependencies
+2. download nvm and use node ver minimum 22 (23 also can)
+3. import order sql into mysql workbench
+4. run start.bat to start website
