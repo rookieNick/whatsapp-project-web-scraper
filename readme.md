@@ -53,10 +53,10 @@ Coding Logic
     
 For numbering formatted message    
 ![alt text](images/image4.png)    
-span._ao3e span:not(:has(ol)) - to capture the normal span message (date,location,name,order)
-span[data-pre-plain-text] - to capture numbering formatted message in whatsapp
+span._ao3e span:not(:has(ol)) - to capture the normal span message (date,location,name,order)  
+span[data-pre-plain-text] - to capture numbering formatted message in whatsapp  
    
   
 For normal plain message   
-![alt text](images/image5.png)  
-span._ao3e span:not(:has(ol)) - will already capture all of the messages
+![alt text](images/image5.png)    
+span._ao3e span:not(:has(ol)) - will already capture all of the messages  
