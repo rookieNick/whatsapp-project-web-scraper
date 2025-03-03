@@ -47,7 +47,7 @@ async function scrollUntilChatFound(page, chatName) {
                 await page.mouse.wheel({ deltaY: 300 });
 
                 // Wait for a short duration to allow DOM updates
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         } catch (error) {
             console.error("❌ Error while scrolling for chat:", error);
@@ -166,7 +166,7 @@ async function runScraper(chatName, targetDate) {
 
     while (!foundDate && !reachedEnd && !beforeTargetDate) {
         await page.keyboard.press('PageUp');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 20));
 
         // Check if the target date is found
         foundDate = await page.evaluate((formattedTargetDate) => {
