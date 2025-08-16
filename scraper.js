@@ -68,7 +68,7 @@ async function reachedEndOfChat(page) {
         return await page.evaluate(() => {
             // Use a more flexible selector with 'contains'
             return Array.from(document.querySelectorAll('span[class*="_ao3e"]')).some(el =>
-                el.innerText.includes("Messages are end-to-end encrypted")
+                el.innerText.includes("Messages and calls are end-to-end encrypted")
             );
         });
     } catch (error) {
