@@ -116,7 +116,156 @@ async function reachedBeforeTargetDate(page, targetDate) {
     }
 }
 
+// Function to dismiss common WhatsApp popups
+async function dismissWhatsAppPopups(page) {
+    try {
+        console.log("🔍 Looking for popups to dismiss...");
+        
+        // Wait a bit for popups to appear
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Try to dismiss "Fresh look" popup
+        const freshLookSelectors = [
+            // Specific selectors for the "Fresh look" popup
+            'div[role="dialog"] button:contains("Continue")',
+            'div[role="dialog"] button:contains("Got it")',
+            'div[role="dialog"] button:contains("OK")',
+            // More specific selectors based on the actual popup
+            'div[data-testid="popup-controls"] button[data-testid="popup-controls-ok"]',
+            'div[role="dialog"] button[data-testid="popup-controls-ok"]',
+            // Generic dialog button selectors
+            'div[role="dialog"] button',
+            'div[data-testid="popup-controls"] button',
+            // Fallback: any button with Continue text
+            'button:contains("Continue")',
+            'button:contains("Got it")',
+            'button:contains("OK")'
+        ];
+        
+        for (const selector of freshLookSelectors) {
+            try {
+                const popupButton = await page.$(selector);
+                if (popupButton) {
+                    await popupButton.click();
+                    console.log("✅ Dismissed popup with selector:", selector);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    break;
+                }
+            } catch (e) {
+                // Continue to next selector
+            }
+        }
+        
+        // Alternative method: Click on any visible close/dismiss buttons
+        await page.evaluate(() => {
+            const closeButtons = Array.from(document.querySelectorAll('button')).filter(btn => {
+                const text = btn.textContent.toLowerCase();
+                return text.includes('got it') || text.includes('ok') || text.includes('continue') || 
+                       text.includes('close') || text.includes('dismiss') || text.includes('×');
+            });
+            
+            closeButtons.forEach(btn => {
+                try {
+                    btn.click();
+                    console.log('Clicked button:', btn.textContent);
+                } catch (e) {
+                    // Ignore errors
+                }
+            });
+        });
+        
+        // Specific method for "Fresh look" popup
+        try {
+            const freshLookPopup = await page.evaluate(() => {
+                // Look for the specific "Fresh look" popup
+                const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+                for (const dialog of dialogs) {
+                    const title = dialog.querySelector('h1, h2, h3, div[role="heading"]');
+                    if (title && title.textContent.includes('fresh look')) {
+                        // Find the Continue button in this popup
+                        const continueBtn = Array.from(dialog.querySelectorAll('button')).find(btn => 
+                            btn.textContent.toLowerCase().includes('continue')
+                        );
+                        if (continueBtn) {
+                            continueBtn.click();
+                            console.log('Clicked Continue button in Fresh look popup');
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+            
+            if (freshLookPopup) {
+                console.log("✅ Successfully dismissed Fresh look popup");
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } catch (e) {
+            console.log("⚠️ Error handling Fresh look popup:", e.message);
+        }
+        
+        // Try keyboard shortcuts to dismiss popups
+        try {
+            await page.keyboard.press('Escape');
+            console.log("⌨️ Pressed Escape key to dismiss popups");
+            await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+            // Ignore keyboard errors
+        }
+        
+        // Wait for any animations to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log("✅ Popup dismissal completed");
+        
+    } catch (error) {
+        console.log("⚠️ Error dismissing popups:", error.message);
+        // Continue execution even if popup dismissal fails
+    }
+}
 
+// Function to check for and dismiss popups during scraping
+async function checkForPopups(page) {
+    try {
+        // Quick check for common popup elements
+        const hasPopup = await page.evaluate(() => {
+            const popups = document.querySelectorAll('div[role="dialog"], div[data-testid="popup-controls"]');
+            return popups.length > 0;
+        });
+        
+        if (hasPopup) {
+            console.log("🔍 Popup detected, attempting to dismiss...");
+            await dismissWhatsAppPopups(page);
+        }
+        
+        // Specific check for "Fresh look" popup
+        const freshLookDetected = await page.evaluate(() => {
+            const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+            for (const dialog of dialogs) {
+                const title = dialog.querySelector('h1, h2, h3, div[role="heading"]');
+                if (title && title.textContent.toLowerCase().includes('fresh look')) {
+                    const continueBtn = Array.from(dialog.querySelectorAll('button')).find(btn => 
+                        btn.textContent.toLowerCase().includes('continue')
+                    );
+                    if (continueBtn) {
+                        continueBtn.click();
+                        console.log('Auto-dismissed Fresh look popup');
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        
+        if (freshLookDetected) {
+            console.log("✅ Fresh look popup auto-dismissed");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+    } catch (error) {
+        // Ignore errors to avoid interrupting the main scraping process
+    }
+}
 
 
 async function runScraper(chatName, targetDate) {
@@ -130,16 +279,29 @@ async function runScraper(chatName, targetDate) {
     const page = await browser.newPage();
 
     // Load WhatsApp Web
-    await page.goto('https://web.whatsapp.com');
+    await page.goto('https://web.whatsapp.com/?v=2');
     console.log("📱 Scan the QR code to log in.");
+
+    // Wait for QR code to be scanned and page to load
+    await page.waitForSelector('div[role="grid"]', { timeout: 60000 });
+    
+    // Immediately try to dismiss any popups that appeared
+    await dismissWhatsAppPopups(page);
 
     // Wait for the main chat list to load
     await page.waitForSelector('div[role="grid"]');
+
+    // Dismiss common WhatsApp popups
+    await dismissWhatsAppPopups(page);
 
     // Scroll until the desired chat is found
     console.log(`🔍 Searching for chat: ${chatName}`);
     await scrollUntilChatFound(page, chatName);
 
+    // WAIT FOR POPUPS TO BE DISMISSED BEFORE CLICKING CHAT
+    console.log("🔍 Checking for popups before opening chat...");
+    await checkForPopups(page);
+    
     // Wait for chat and click
     await page.waitForSelector(`span[title="${chatName}"]`);
     await page.click(`span[title="${chatName}"]`);
@@ -165,6 +327,9 @@ async function runScraper(chatName, targetDate) {
     let beforeTargetDate = false;
 
     while (!foundDate && !reachedEnd && !beforeTargetDate) {
+        // Check for and dismiss any popups that might have appeared
+        await checkForPopups(page);
+        
         await page.keyboard.press('PageUp');
         await new Promise(resolve => setTimeout(resolve, 20));
 
