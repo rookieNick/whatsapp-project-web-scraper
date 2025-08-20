@@ -21,6 +21,7 @@ function to24Hour(hour, minute, period) {
     if (period === 'AM' && hour === '12') hour = '00';
     return `${hour.padStart(2, '0')}:${minute}`;
 }
+
 // Scroll down using mouse wheel until chat name is found
 async function scrollUntilChatFound(page, chatName) {
     let chatFound = false;
@@ -306,6 +307,8 @@ async function runScraper(chatName, targetDate) {
     await page.waitForSelector(`span[title="${chatName}"]`);
     await page.click(`span[title="${chatName}"]`);
     await page.waitForSelector('div[class*="message-in"], div[class*="message-out"]');
+    console.log("⏳ Waiting 5 seconds for messages to load...");
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds for messages to load
 
     // // Scroll up for 5 seconds
     // const startTime = Date.now();
@@ -325,13 +328,41 @@ async function runScraper(chatName, targetDate) {
     let foundDate = false;
     let reachedEnd = false;
     let beforeTargetDate = false;
+    const allMessages = new Set(); // Use a Set to store unique messages
 
     while (!foundDate && !reachedEnd && !beforeTargetDate) {
         // Check for and dismiss any popups that might have appeared
         await checkForPopups(page);
         
         await page.keyboard.press('PageUp');
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 20)); // Changed wait for UI stability to 20ms
+
+        // Extract currently visible messages and add to the Set
+        const currentMessages = await page.evaluate(() => {
+            // Helper to decode message and handle line breaks (re-defined for browser context)
+            const extractMessageText = (msg) => {
+                const spans = msg.querySelectorAll('span._ao3e span:not(:has(ol)), span[data-pre-plain-text]'); // Select all message parts
+
+                // Collect all spans and join with newlines
+                return Array.from(spans)
+                    .map(span => span.innerText.replace(/\n/g, ' ').trim()) // Replace newlines with space and trim each part
+                    .filter(text => text.length > 0) // Remove empty strings
+                    .join(';'); // Use semicolon as the separator
+            };
+
+            return Array.from(document.querySelectorAll('div[class*="message-in"], div[class*="message-out"]'))
+                .map(msg => {
+                    const metaDiv = msg.querySelector('div.copyable-text');
+                    const metaText = metaDiv ? metaDiv.getAttribute('data-pre-plain-text') : "";
+
+                    const messageText = extractMessageText(msg);
+
+                    return { meta: metaText, text: messageText };
+                })
+                .filter(msg => msg.meta && msg.text); // Filter valid messages
+        }); // No need to pass extractMessageText as it's defined within this scope
+
+        currentMessages.forEach(msg => allMessages.add(JSON.stringify(msg))); // Add stringified messages to Set
 
         // Check if the target date is found
         foundDate = await page.evaluate((formattedTargetDate) => {
@@ -343,8 +374,6 @@ async function runScraper(chatName, targetDate) {
         reachedEnd = await reachedEndOfChat(page);
 
         beforeTargetDate = await reachedBeforeTargetDate(page, formattedTargetDate);
-
-
     }
 
     if (reachedEnd) {
@@ -357,29 +386,8 @@ async function runScraper(chatName, targetDate) {
         console.log("✅ Reached before target date. Extracting messages...");
     }
 
-    // Extract messages
-    const messages = await page.evaluate(() => {
-        // Helper to decode message and handle line breaks
-        const extractMessageText = (msg) => {
-            const spans = msg.querySelectorAll('span._ao3e span:not(:has(ol)), span[data-pre-plain-text]'); // Select all message parts
-
-            // Collect all spans and join with newlines
-            return Array.from(spans)
-                .map(span => span.innerText) // Extract text
-                .join(';') // Use semicolon as the separator
-        };
-
-        return Array.from(document.querySelectorAll('div[class*="message-in"], div[class*="message-out"]'))
-            .map(msg => {
-                const metaDiv = msg.querySelector('div.copyable-text');
-                const metaText = metaDiv ? metaDiv.getAttribute('data-pre-plain-text') : "";
-
-                const messageText = extractMessageText(msg); // Get full message
-
-                return { meta: metaText, text: messageText };
-            })
-            .filter(msg => msg.meta && msg.text); // Filter valid messages
-    });
+    // Convert Set back to array for final processing
+    const messages = Array.from(allMessages).map(msgStr => JSON.parse(msgStr));
 
     // Regex to extract datetime and name
     // Regex for 24-hour and 12-hour formats

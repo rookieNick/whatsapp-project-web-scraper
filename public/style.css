@@ -175,6 +175,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     top: 20px;
     right: 20px;
     max-width: 350px;
+    max-height: 80vh; /* Set a maximum height, e.g., 80% of viewport height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding-right: 15px; /* Add padding for scrollbar */
     z-index: 9999; /* Ensure it's above other content */
 }
 
@@ -219,4 +222,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         right: 10px;
         max-width: 90%;
     }
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0 20px 0;
+    gap: 10px;
+}
+
+.pagination-controls button {
+    width: auto; /* Override 100% width from general button style */
+    padding: 8px 15px;
+    margin: 0; /* Remove default margin-top */
+}
+
+.pagination-controls button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.pagination-controls span {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
 }
