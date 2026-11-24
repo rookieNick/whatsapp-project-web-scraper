@@ -1,0 +1,30 @@
+Error in insertOrder: Error: Incorrect datetime value: '' for column 'msgDatetime' at row 1
+    at PromiseConnection.query (C:\Users\User\OneDrive\Desktop\new order list program\node_modules\mysql2\lib\promise\connection.js:29:22)
+    at db.insertOrder (C:\Users\User\OneDrive\Desktop\new order list program\db.js:47:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async runScraper (C:\Users\User\OneDrive\Desktop\new order list program\scraper.js:501:11)
+    at async C:\Users\User\OneDrive\Desktop\new order list program\server.js:48:35 {
+  code: 'ER_TRUNCATED_WRONG_VALUE',
+  errno: 1292,
+  sql: '\n' +
+    '            INSERT INTO orders (id, msgDatetime, orderDate, area, name, orderDetails, sender)\n' +
+    "            VALUES ('ORDER1', '', '2026-11-17', 'PT', 'Kopikia Pickle By the Sea', '星期二\\nkopikia Pickle by the sea\\n肉片 1盒\\n猪骨 2kg x 4\\n⁠猪油 4kg x 5', '')\n" +
+    '        ',
+  sqlState: '22007',
+  sqlMessage: "Incorrect datetime value: '' for column 'msgDatetime' at row 1"
+}
+✅ Order written successfully to DB!
+✈️ Attempting MySQL Insert for order by [Kopikia Macalister]...
+❌ Error checking order existence: Error: Incorrect DATETIME value: ''
+    at PromiseConnection.query (C:\Users\User\OneDrive\Desktop\new order list program\node_modules\mysql2\lib\promise\connection.js:29:22)
+    at db.checkIfOrderExists (C:\Users\User\OneDrive\Desktop\new order list program\db.js:97:40)
+    at runScraper (C:\Users\User\OneDrive\Desktop\new order list program\scraper.js:489:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\Users\User\OneDrive\Desktop\new order list program\server.js:48:35 {
+  code: 'ER_WRONG_VALUE',
+  errno: 1525,
+  sql: 'SELECT COUNT(*) AS count FROM orders \n' +
+    "             WHERE msgDatetime = '' AND orderDate = '2026-11-17' AND area = 'PT' AND name = 'Kopikia Macalister' AND orderDetails = 'kopikia Macalister\\n肉片 2盒\\n猪骨 2kg x 4\\n三层肉（不要油）3kg x 4\\n记得不要油 (要切）'",
+  sqlState: 'HY000',
+  sqlMessage: "Incorrect DATETIME value: ''"
+}

@@ -26,6 +26,20 @@ INSTALLATION
 3. import order sql into mysql workbench
 4. run start.bat to start website  
   
+-----------------------
+WhatsApp Metadata Format
+-----------------------
+
+Configure the format of WhatsApp's `data-pre-plain-text` in `appsettings.json`:
+
+- `timeFormat`: `24h` or `12h`
+- `dateFormat`: `DD/MM/YYYY` or `MM/DD/YYYY`
+
+For the client format `[7:30 PM, 11/24/2026]`, use `12h` and `MM/DD/YYYY`.
+For `[19:30, 24/11/2026]`, use `24h` and `DD/MM/YYYY`.
+Restart the scraper after changing the settings. These options apply to WhatsApp
+message metadata, not the `Date` field inside an order message.
+
   
   
 -----------------------
