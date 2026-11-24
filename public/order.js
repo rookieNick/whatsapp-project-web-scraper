@@ -1,4 +1,6 @@
 let allGroupedOrders = {}; // Store all grouped orders globally
+const ORDERS_PER_PAGE = 5;
+let currentPage = 1;
 
 document.addEventListener("DOMContentLoaded", function () {
     fetchOrders();  // Initially load all orders
@@ -7,7 +9,16 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById('filterBtn').addEventListener('click', fetchFilteredOrders);
     document.getElementById('showAllBtn').addEventListener('click', () => fetchOrders());
 
-    // Add event listeners for pagination controls (will be added to HTML later)
+    document.getElementById('prevPageBtn').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage -= 1;
+            renderOrders();
+        }
+    });
+    document.getElementById('nextPageBtn').addEventListener('click', () => {
+        currentPage += 1;
+        renderOrders();
+    });
 });
 
 // Function to format order area to uppercase
@@ -17,6 +28,7 @@ function formatOrderArea(area) {
 
 
 function fetchOrders(startDate = '', endDate = '', orderDate = '', location = '') {
+    currentPage = 1;
     // Pass the filters (startDate, endDate, orderDate, location) as query parameters to the backend
     const url = `/orders?startDate=${startDate}&endDate=${endDate}&orderDate=${orderDate}&location=${location}`;
 
@@ -160,37 +172,75 @@ function groupOrders(orders) {
 // Function to render orders for the current page
 function renderOrders() {
     const list = document.getElementById("orderList");
-    list.innerHTML = '';  // Clear any existing content
-
-    const allDates = Object.keys(allGroupedOrders).sort((a, b) => new Date(b) - new Date(a)); // Sort dates descending
+    const paginationControls = document.getElementById("paginationControls");
+    const pageIndicator = document.getElementById("pageIndicator");
+    const prevPageBtn = document.getElementById("prevPageBtn");
+    const nextPageBtn = document.getElementById("nextPageBtn");
+    const pagedOrders = [];
+    const allDates = Object.keys(allGroupedOrders).sort(
+        (a, b) => new Date(b) - new Date(a),
+    );
 
     for (const date of allDates) {
-        const areas = allGroupedOrders[date];
-        const dateHTML = `<h3>${date}</h3>`;  // Display the date
-        list.innerHTML += dateHTML;
-
-        for (const area in areas) {
-            const orders = areas[area];
-            const areaHTML = `
-                <h4>Area: ${area}</h4>
-                <ul class="orderListUl">
-                    ${orders.map(order => `
-                        <li class="order-item">
-                            <p><strong>Order ID:</strong> ${order.id}</p>
-                            <p><strong>Sender:</strong> ${order.sender}</p>
-                            <p><strong>Message Date & Time:</strong> ${order.msgDatetime}</p>
-                            <p><strong>Order Date:</strong> ${formatDate(order.orderDate, true)}</p>
-                            <p><strong>Area:</strong> ${order.area}</p>
-                            <p><strong>Name:</strong> ${order.name}</p>
-                            <p><strong>Order Details:</strong> ${order.orderDetails}</p>
-                        </li>
-                    `).join('')}
-                </ul>
-                <hr/>
-            `;
-            list.innerHTML += areaHTML;
+        for (const area in allGroupedOrders[date]) {
+            allGroupedOrders[date][area].forEach(order => {
+                pagedOrders.push({ date, area, order });
+            });
         }
     }
+
+    const totalPages = Math.max(1, Math.ceil(pagedOrders.length / ORDERS_PER_PAGE));
+    currentPage = Math.min(currentPage, totalPages);
+    const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+    const currentOrders = pagedOrders.slice(
+        startIndex,
+        startIndex + ORDERS_PER_PAGE,
+    );
+
+    let html = "";
+    let currentDate = null;
+    let currentArea = null;
+
+    currentOrders.forEach(({ date, area, order }) => {
+        if (date !== currentDate) {
+            if (currentArea !== null) {
+                html += "</ul><hr/>";
+            }
+            html += `<h3>${date}</h3>`;
+            currentDate = date;
+            currentArea = null;
+        }
+
+        if (area !== currentArea) {
+            if (currentArea !== null) {
+                html += "</ul><hr/>";
+            }
+            html += `<h4>Area: ${area}</h4><ul class="orderListUl">`;
+            currentArea = area;
+        }
+
+        html += `
+            <li class="order-item">
+                <p><strong>Order ID:</strong> ${order.id}</p>
+                <p><strong>Sender:</strong> ${order.sender}</p>
+                <p><strong>Message Date & Time:</strong> ${order.msgDatetime}</p>
+                <p><strong>Order Date:</strong> ${formatDate(order.orderDate, true)}</p>
+                <p><strong>Area:</strong> ${order.area}</p>
+                <p><strong>Name:</strong> ${order.name}</p>
+                <p><strong>Order Details:</strong> ${order.orderDetails}</p>
+            </li>
+        `;
+    });
+
+    if (currentArea !== null) {
+        html += "</ul><hr/>";
+    }
+
+    list.innerHTML = html || "<p>No orders found.</p>";
+    paginationControls.hidden = pagedOrders.length <= ORDERS_PER_PAGE;
+    pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+    prevPageBtn.disabled = currentPage === 1;
+    nextPageBtn.disabled = currentPage === totalPages;
 }
 
 // Function to format the date to 'YYYY-MM-DD HH:mm:ss'

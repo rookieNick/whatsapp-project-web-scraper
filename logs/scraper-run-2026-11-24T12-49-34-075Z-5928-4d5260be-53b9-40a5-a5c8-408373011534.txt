@@ -1,0 +1,26 @@
+Scraper run started: 2026-11-24T12:49:34.076Z
+Run ID: 2026-11-24T12-49-34-075Z-5928-4d5260be-53b9-40a5-a5c8-408373011534
+Chat: test order
+Target date: 2026-11-17
+
+2026-11-24T12:49:34.077Z Run log: C:\Users\USER\Desktop\whatsapp-project-web-scraper\logs\scraper-run-2026-11-24T12-49-34-075Z-5928-4d5260be-53b9-40a5-a5c8-408373011534.txt
+2026-11-24T12:49:35.107Z 📱 Scan the QR code to log in.
+2026-11-24T12:49:48.398Z 🔍 Looking for popups to dismiss...
+2026-11-24T12:49:50.455Z ✅ Dismissed popup with selector: div[role="dialog"] button
+2026-11-24T12:49:51.468Z ⌨️ Pressed Escape key to dismiss popups
+2026-11-24T12:49:52.990Z ✅ Popup dismissal completed
+2026-11-24T12:49:53.018Z 🔍 Looking for popups to dismiss...
+2026-11-24T12:49:55.043Z ⌨️ Pressed Escape key to dismiss popups
+2026-11-24T12:49:56.556Z ✅ Popup dismissal completed
+2026-11-24T12:49:56.557Z 🔍 Searching for chat: test order
+2026-11-24T12:49:56.569Z ✅ Chat found and scrolled into view.
+2026-11-24T12:49:56.569Z 🔍 Checking for popups before opening chat...
+2026-11-24T12:49:56.968Z ⏳ Waiting 5 seconds for messages to load...
+2026-11-24T12:50:01.969Z Target date: 2026-11-17
+2026-11-24T12:50:02.084Z SCRAPER RUN FAILED: TargetCloseError: Protocol error (Input.dispatchKeyEvent): Session closed. Most likely the page has been closed.
+    at CdpCDPSession.send (C:\Users\USER\Desktop\whatsapp-project-web-scraper\node_modules\puppeteer-core\lib\cjs\puppeteer\cdp\CdpSession.js:71:35)
+    at CdpKeyboard.down (C:\Users\USER\Desktop\whatsapp-project-web-scraper\node_modules\puppeteer-core\lib\cjs\puppeteer\cdp\Input.js:36:28)
+    at CdpKeyboard.press (C:\Users\USER\Desktop\whatsapp-project-web-scraper\node_modules\puppeteer-core\lib\cjs\puppeteer\cdp\Input.js:146:20)
+    at runScraperInternal (C:\Users\USER\Desktop\whatsapp-project-web-scraper\scraper.js:444:25)
+    at async runScraper (C:\Users\USER\Desktop\whatsapp-project-web-scraper\scraper.js:364:25)
+    at async C:\Users\USER\Desktop\whatsapp-project-web-scraper\server.js:48:35

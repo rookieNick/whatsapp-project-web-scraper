@@ -233,6 +233,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     gap: 10px;
 }
 
+.pagination-controls[hidden] {
+    display: none;
+}
+
 .pagination-controls button {
     width: auto; /* Override 100% width from general button style */
     padding: 8px 15px;

@@ -1,3 +1,7 @@
+const fs = require("fs");
+const path = require("path");
+const { randomUUID } = require("crypto");
+const util = require("util");
 const puppeteer = require("puppeteer");
 const db = require("./db"); // Shared MySQL connection
 const {
@@ -8,6 +12,55 @@ const {
 const whatsappMetadataSettings = validateWhatsAppMetadataSettings(
   require("./appsettings.json").whatsappMetadata,
 );
+
+function redactMetadataSender(meta) {
+  return String(meta || "").replace(/(\])\s*.*$/, "$1 [sender redacted]");
+}
+
+function mirrorConsoleToFile(logFilePath) {
+  const methods = ["log", "info", "warn", "error", "debug"];
+  const originalMethods = new Map();
+  const transcript = fs.createWriteStream(logFilePath, { flags: "a" });
+  let writeError;
+
+  transcript.on("error", (error) => {
+    writeError = error;
+  });
+
+  for (const method of methods) {
+    const original = console[method];
+    originalMethods.set(method, original);
+    console[method] = (...args) => {
+      original.apply(console, args);
+      if (!writeError) {
+        transcript.write(
+          `${new Date().toISOString()} ${util.format(...args)}\n`,
+        );
+      }
+    };
+  }
+
+  return async () => {
+    for (const [method, original] of originalMethods) {
+      console[method] = original;
+    }
+
+    if (writeError) {
+      transcript.destroy();
+      throw writeError;
+    }
+
+    await new Promise((resolve, reject) => {
+      transcript.once("finish", resolve);
+      transcript.once("error", reject);
+      transcript.end();
+    });
+
+    if (writeError) {
+      throw writeError;
+    }
+  };
+}
 
 // Function to extract sender's name
 // Scroll down using mouse wheel until chat name is found
@@ -280,6 +333,68 @@ async function checkForPopups(page) {
 }
 
 async function runScraper(chatName, targetDate) {
+  const runId = `${new Date().toISOString().replace(/[:.]/g, "-")}-${process.pid}-${randomUUID()}`;
+  const logFilePath = path.join(
+    __dirname,
+    "logs",
+    `scraper-run-${runId}.txt`,
+  );
+  const startedAt = Date.now();
+  let failureCount = 0;
+  let runError;
+  let incorrectMessages;
+
+  await fs.promises.mkdir(path.dirname(logFilePath), { recursive: true });
+  await fs.promises.writeFile(
+    logFilePath,
+    `Scraper run started: ${new Date().toISOString()}\nRun ID: ${runId}\nChat: ${chatName}\nTarget date: ${targetDate}\n\n`,
+    "utf8",
+  );
+  const stopConsoleMirror = mirrorConsoleToFile(logFilePath);
+  const logEvent = async (event, details = {}) => {
+    if (event === "failure") {
+      failureCount += 1;
+    }
+    console.error(`SCRAPER ${event.toUpperCase()}:`, details);
+  };
+
+  console.log("Run log:", logFilePath);
+
+  try {
+    incorrectMessages = await runScraperInternal(
+      chatName,
+      targetDate,
+      logEvent,
+    );
+    console.log("SCRAPER RUN COMPLETED:", {
+      outcome: failureCount === 0 ? "success" : "completed_with_failures",
+      failureCount,
+      durationMs: Date.now() - startedAt,
+      incorrectMessageCount: incorrectMessages.length,
+    });
+  } catch (error) {
+    runError = error;
+    console.error("SCRAPER RUN FAILED:", error);
+  }
+
+  try {
+    await stopConsoleMirror();
+  } catch (logError) {
+    if (runError) {
+      process.stderr.write(`Could not finish scraper transcript: ${logError.message}\n`);
+    } else {
+      runError = logError;
+    }
+  }
+
+  if (runError) {
+    throw runError;
+  }
+
+  return incorrectMessages;
+}
+
+async function runScraperInternal(chatName, targetDate, logEvent) {
   const browser = await puppeteer.launch({
     headless: false,
     args: ["--window-size=1200,800", "--window-position=0,0"],
@@ -445,10 +560,14 @@ async function runScraper(chatName, targetDate) {
       const area = orderMatch[2].trim();
 
       if (!datetime) {
-        console.error(
-          "❌ WhatsApp metadata did not match appsettings.json; skipping database insert:",
-          meta,
-        );
+        const message =
+          "WhatsApp metadata did not match appsettings.json; skipping database insert.";
+        console.error(`❌ ${message}`);
+        await logEvent("failure", {
+          stage: "metadata_parse",
+          message,
+          metadata: redactMetadataSender(meta),
+        });
         incorrectMessages.push({ datetime, sender, text });
         continue;
       }
@@ -457,6 +576,7 @@ async function runScraper(chatName, targetDate) {
         `✈️ Attempting MySQL Insert for order by [${extractedName}]...`,
       );
 
+      let databaseOperation = "duplicate_check";
       try {
         const isDuplicate = await db.checkIfOrderExists(
           datetime,
@@ -470,6 +590,7 @@ async function runScraper(chatName, targetDate) {
           console.log("⚠️ Duplicate order found. Skipping...");
           continue;
         } else {
+          databaseOperation = "insert";
           await db.insertOrder(
             datetime,
             orderDate,
@@ -483,6 +604,19 @@ async function runScraper(chatName, targetDate) {
         }
       } catch (dbErr) {
         console.error("❌ MySQL Error during insertion loop:", dbErr.message);
+        await logEvent("failure", {
+          stage: "database",
+          operation: databaseOperation,
+          error: {
+            name: dbErr.name,
+            message: dbErr.message,
+            code: dbErr.code,
+          },
+          metadata: redactMetadataSender(meta),
+          datetime,
+          orderDate,
+          area,
+        });
       }
     } else {
       incorrectMessages.push({ datetime, sender, text });
